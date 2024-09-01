@@ -279,7 +279,7 @@ void *robotStateUpdateSend(void *data)
  
 }
 
-void *runImpCtller(void *data)
+void *runImpCtller(void *data)//该控制器涉及从电机获取数据、执行运动学计算、控制关节位置或执行阻抗控制。
 {
     struct timeval startTime,endTime;
     double timeUse;
@@ -291,7 +291,7 @@ void *runImpCtller(void *data)
     //rbt.dxlMotors.torqueEnable();
     while (1)
     {
-        if(runFlag&&rbt.autoControlFlag)
+        if(runFlag&&rbt.autoControlFlag)//runflag表示爬行开始，autoControlFlag表示？
         {
             gettimeofday(&startTime,NULL);
             /* get motors data  */
@@ -300,12 +300,12 @@ void *runImpCtller(void *data)
             motors.getVelocity();
 
             /* update the data IMP need */
-            rbt.UpdatejointPresPosAndVel(motors.present_position);         
-            //rbt.UpdatejointPresVel(); //useless,wrong data
-            rbt.ForwardKinematics(1);
-            rbt.UpdateJacobians();
+            rbt.UpdatejointPresPosAndVel(motors.present_position);//更新控制器所需的关节当前位置和速度数据。
+            //rbt.UpdatejointPresVel(); //		useless,wrong data
+            rbt.ForwardKinematics(1);//		执行正向运动学计算，用于确定机器人腿部末端的位置。
+            rbt.UpdateJacobians();//		更新雅可比矩阵，用于计算机器人末端的力和速度等信息
            // rbt.UpdateFtsPresVel();
-            rbt.UpdateFtsPresForce(motors.present_torque);  
+            rbt.UpdateFtsPresForce(motors.present_torque);//  更新关节上的力传感器数据，根据电机扭矩计算。
             // for (size_t i = 0; i < 12; i++)
             // {
             //     torque[i] = rbt.dxlMotors.present_torque[i];
@@ -320,7 +320,7 @@ void *runImpCtller(void *data)
             // rbt.InverseKinematics(rbt.mfTargetPos); //    Postion control
 
             /*      Postion control      */
-             rbt.InverseKinematics(rbt.mfLegCmdPos); 
+             rbt.InverseKinematics(rbt.mfLegCmdPos); //计算逆向运动学，将目标末端位置（mfLegCmdPos）转换为关节角度（mfJointCmdPos）。
              cout<<endl;
              cout<<"mfLegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;
              cout<<"mfJointCmdPos:\n"<<rbt.mfJointCmdPos<<endl;
@@ -332,7 +332,7 @@ void *runImpCtller(void *data)
             // cout<<endl;
 
             /*      Set joint angle      */
-            SetPos(rbt.mfJointCmdPos,motors,rbt.vLastSetPos);
+            SetPos(rbt.mfJointCmdPos,motors,rbt.vLastSetPos);//将计算得到的关节角度指令发送到电机控制器，以实际控制机器人关节的角度位置。
 
             /*      Impedance control      */
             // for(int i=0; i<4; i++)  
@@ -364,14 +364,14 @@ void *SvUpdate(void *data)
         int gain=1;
         for(int i=0;i<4;i++)
         {
-            value[i]=(int)ads.read_adc(i,gain);
-            usleep(10000);
+            value[i]=(int)ads.read_adc(i,gain);// 从四个 ADC 通道中读取数据，并将结果存储在 value 向量中。增益参数 gain 设置为 1。
+            usleep(10000);//每次读取，延时10毫秒
         }
-        rbt.UpdateTouchStatus(value,preValue,prepreValue);
+        rbt.UpdateTouchStatus(value,preValue,prepreValue);//调用 rbt 对象的 UpdateTouchStatus 函数，更新触摸状态。value、preValue 和 prepreValue 分别表示当前值、前一次循环的值和再前一次循环的值。
         prepreValue=preValue;
-        preValue=value;
+        preValue=value;//将 preValue 和 prepreValue 更新为当前的值，以备下次循环使用。
 
-        if(rbt.autoControlFlag == false){
+        if(rbt.autoControlFlag == false){//代码检查 rbt.autoControlFlag 是否为 false。如果是，则进一步判断四条腿的触摸状态。
             int count=0;
             for(auto a:rbt.m_glLeg){
                 if(a->getTouchStatus()==true)   count++;
@@ -384,7 +384,7 @@ void *SvUpdate(void *data)
                       rbt.probeTrigger[i]=true;
                 }
             }
-        }
+        }//如果四条腿都处于触摸状态（count == 4），rbt.autoControlFlag 被设置为 true，并检查每条腿的状态。如果某条腿的状态不是 recover（恢复）或 stance（站立），则将对应的 rbt.probeTrigger[i] 设为 true。
 
 
         gettimeofday(&endTime,NULL);
